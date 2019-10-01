@@ -17,9 +17,11 @@ AppFactory::setContainer($container);
 $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
 
-// $users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
+$router = $app->getRouteCollector()->getRouteParser();
 
-$app->get('/', function ($request, $response) {
+$app->get('/', function ($request, $response) use ($router) {
+    $router->urlFor('users');
+    $router->urlfor('user', ['id' => 4]);
     return $response->write('Welcome!');
 });
 
@@ -28,7 +30,7 @@ $app->get('/courses/{id}', function ($request, $response, array $args) {
     return $response->write("Course id: {$id}");
 });
 
-$app->get('/users', function ($request, $response) use ($repo) {
+$app->get('/users', function ($request, $response) use ($repo, &$router) {
     $term = $request->getQueryParam('term');
     $users = $repo->all();
     if (!empty($term)) {
@@ -37,19 +39,12 @@ $app->get('/users', function ($request, $response) use ($repo) {
                 return $user;
             }
     	});
-    	$params = ['users' => $filtered_users, 'term' => $term];
+    	$params = ['users' => $filtered_users, 'term' => $term, 'newUserLink' => $router->urlFor('userNew')];
     } else {
-    	$params = ['users' => $users, 'term' => []];
+    	$params = ['users' => $users, 'term' => [], 'newUserLink' => $router->urlFor('userNew')];
     }
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
-});
-
-// $app->get('/users/{id}', function ($request, $response, $args) {
-//     $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
-//     // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
-//     // $this доступен внутри анонимной функции благодаря http://php.net/manual/ru/closure.bindto.php
-//     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
-// });
+})->setName('users');
 
 $app->post('/users', function ($request, $response) use ($repo) {
     $validator = new App\Validator();
@@ -66,14 +61,23 @@ $app->post('/users', function ($request, $response) use ($repo) {
     ];
     $response = $response->withStatus(422);
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
-});
+})->setName('usersForm');
 
-$app->get('/users/new', function ($request, $response) {
+$app->get('/users/new', function ($request, $response) use ($router){
+		
     $params = [
         'user' => [],
-        'errors' => []
+        'errors' => [],
+        'usersLink' => $router->urlFor('users')
     ];
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
-});
+})->setName('userNew');
+
+$app->get('/users/{id}', function ($request, $response, $args) {
+    $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
+    // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
+    // $this доступен внутри анонимной функции благодаря http://php.net/manual/ru/closure.bindto.php
+    return $this->get('renderer')->render($response, 'users/show.phtml', $params);
+})->setName('user');
 
 $app->run();
