@@ -1,0 +1,13 @@
+<h1>Users: </h1>
+<form action="/users" method="get">
+  <input type="search" name="term" value="<?= htmlspecialchars($term) ?>" />
+  <input type="submit" value="Search" />
+</form>
+	<?php foreach ($users as $user): ?>
+		<ul>
+		<li>User name: <strong><?= htmlspecialchars($user['name'])  ?></strong></li>
+		<li>User email: <strong><?= htmlspecialchars($user['email'])  ?></strong></li>
+		</ul>
+		<br>
+	<?php endforeach ?>
+<p></p>
